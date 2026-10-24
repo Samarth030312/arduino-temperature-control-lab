@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Firmware tests on the PC (g++ only, no Arduino toolchain): the real sketch runs against an
+# emulated plant; its output is the protocol transcript the MATLAB tests parse. The build is
+# also the real-time emulator (--pty) the end-to-end test talks to.
+set -euo pipefail
+root="$(cd "$(dirname "$0")/../.." && pwd)"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+g++ -std=c++17 -O1 -I"$tmp" -o "$tmp/tma" "$root/firmware/tests/test_moving_average.cpp" && "$tmp/tma"
+echo "== temperature firmware against an emulated bulb, box and DHT11"
+g++ -std=c++17 -O1 -w -include algorithm -I"$root/firmware/tests/host_stubs" -o "$root/firmware/tests/tempsim" "$root/firmware/tests/firmware_host_test.cpp"
+"$root/firmware/tests/tempsim" "$root/firmware/tests/fixtures/temperature_transcript.txt"
