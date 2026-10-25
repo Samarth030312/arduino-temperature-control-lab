@@ -153,14 +153,21 @@ int main(int argc, char **argv) {
   CHECK(running && !(flags & F_OVERTEMP), "58 C: below the cut-off, the 55 C set-point can run");
   plant.T = 61; runFor(3);
   CHECK(!running && (flags & F_OVERTEMP) && g_pwm[PIN_SSR] == 0, "60 C cut-off: heater off and latched");
+  CHECK(Serial.out.find("$ERR,1,RUN,13,") != std::string::npos, "the cut-off is reported to the host");
   send("RUN,1"); runFor(0.2);
   CHECK(Serial.out.find("fault latched") != std::string::npos, "RUN refused while the cut-off is latched");
   plant.K = 54;
 
-  // sensor failure: 5 s without a reading -> heater off
+  // sensor: a failed read now and then is noise (seen on the lab DHT11, 2026-10-26); 5 failed
+  // reads in a row (10 s) is a fault, reported to the host
   reset(30); send("CFG,1,ONOFF,45,1,10,50,2000"); send("RUN,1"); runFor(5);
-  g_dhtFail = true; runFor(7);
-  CHECK(!running && (flags & F_SENSOR) && g_pwm[PIN_SSR] == 0, "sensor lost for 5 s: heater off");
+  for (int k = 0; k < 10; k++) { g_dhtFail = (k % 2 == 0); runFor(2); }
+  g_dhtFail = true; runFor(7.9);                             // 4 failed reads in a row
+  CHECK(running && !(flags & F_SENSOR), "occasional failed reads, and 4 in a row: still running");
+  CHECK(Serial.out.find("# DHT read failed, 4 in a row") != std::string::npos, "each failed read is reported");
+  size_t m0 = Serial.out.size(); runFor(4);
+  CHECK(!running && (flags & F_SENSOR) && g_pwm[PIN_SSR] == 0, "5 failed reads in a row (10 s): heater off");
+  CHECK(Serial.out.find("$ERR,1,RUN,12,", m0) != std::string::npos, "the sensor fault is reported to the host");
   g_dhtFail = false;
 
   // host watchdog: MATLAB silent for 3 s -> heater off

@@ -22,7 +22,6 @@ function app = missionControl(D)
 %   D.scene          @(ax) handles;  D.pose  @(h, st) st: y, u, sp, t, extra
 %   D.rigModes       modes the firmware runs;  D.cfg @(v) {CFG fields};  D.preRun @(link, v)
 %   D.fromTel        @(T) table with t_s, setpoint, meas, u_pct (plus the raw columns)
-%   D.flags          telemetry flag names that mean the firmware stopped the actuator
 %
 %   Returns handles and functions for scripts and tests (selectMission, setPreset, set, sim,
 %   metricsTable, overlay, connect, runRig, stop, abort, state, link, runs).
@@ -485,7 +484,11 @@ function app = missionControl(D)
         stopPlay(); clearReplay(); set([tr.yH tr.uH], 'XData', nan, 'YData', nan);
         try
             if isfield(D, 'preRun') && ~isempty(D.preRun), D.preRun(link, v); end
-            f = D.cfg(v); link.send('CFG', f{:}); link.setpoint(v.(D.spKey)); link.run();
+            f = D.cfg(v);
+            % every command must be acknowledged: a frame can arrive garbled (SerialLink.command)
+            if ~(link.command('CFG', f{:}) && link.setpoint(v.(D.spKey)) && link.run())
+                error('the board did not acknowledge the configuration or RUN (see the session log)');
+            end
         catch err
             say(['Could not start: ' err.message], 'warn'); return;
         end
@@ -517,6 +520,17 @@ function app = missionControl(D)
                 try, link.stop(); catch, end
                 endRun('', 'FINISHED'); say('Run finished and saved under RUNS.', 'ok'); return;
             end
+        end
+        % the firmware stopped by itself without saying so (older firmware): its RUNNING flag
+        % is off in the telemetry while the app still runs
+        if ~isempty(T) && height(T) > 20 && bitand(double(T.flags(end)), 1) == 0
+            names = setdiff(templab.protocol.flagNames(T.flags(end), link.telType), {'RUNNING'}, 'stable');
+            reason = 'stopped by the firmware'; if ~isempty(names), reason = strjoin(lower(names), ', '); end
+            hw.fault = reason; endRun('', ['STOPPED: ' reason]);
+            ui.stateChip.Text = 'FAULT'; ui.stateChip.BackgroundColor = K.red;
+            ui.clear.BackgroundColor = K.amber; ui.clear.FontColor = K.bg;
+            say(sprintf('The firmware switched the actuator off: %s. Fix the cause, then CLEAR FAULT.', reason), 'warn');
+            return;
         end
         ev = link.eventLog;
         if ~isempty(ev)

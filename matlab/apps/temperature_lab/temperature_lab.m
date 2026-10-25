@@ -21,6 +21,7 @@ function app = temperature_lab()
     D.welcome = 'Simulation of the bulb heater from the physics panel. Pick a mission; plug in the Uno to run it on the rig.';
     D.modeKey = 'mode'; D.spKey = 'setpoint'; D.tendKey = 'Tend';
     D.rigModes = {'ONOFF', 'HYST', 'MA', 'P', 'TPROP', 'STEP', 'PI'};
+    D.preRun = @(link, v) rigCheck(v);
     D.yLabel = 'TEMPERATURE  (°C, what the DHT11 reads)'; D.uLabel = 'HEATER POWER  (% of full, mean over 0.1 s)';
     D.extraName = 'true zone T'; D.yPad = 2; D.playSpeed = '30x';
     D.physicsSection = 'BULB · ENCLOSURE · SENSOR  (→ physics)';
@@ -92,6 +93,14 @@ function C = controls()
         c = struct('key', key, 'label', label, 'section', sec, 'type', 'drop', 'lims', [], 'fmt', '', ...
                    'items', {items}, 'data', {data}, 'default', def, 'show', show, 'tip', tip);
     end
+end
+
+function rigCheck(v)
+    % the firmware has no power limit, no plain integrator and no way to change the room: a run
+    % that asks for one of them would run something else under its name
+    if v.uMaxPct < 100, error('the firmware has no heater power limit: set it to 100 % (simulation only)'); end
+    if any(strcmp(v.mode, {'PI', 'PID'})) && strcmp(v.aw, 'off'), error('the firmware always clamps its integrator: the plain integrator is simulation only'); end
+    if v.ambStep ~= 0, error('the room-temperature step is simulated: set it to 0 for the rig'); end
 end
 
 function M = missions()

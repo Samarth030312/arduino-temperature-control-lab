@@ -16,7 +16,8 @@
 //   D8   optional START / STOP pushbutton to GND (normally open)
 //
 // SAFETY: heater starts OFF and only runs after RUN (MATLAB) or the button.
-// Hard cut-off at 60 C (DHT11; 70 C with a DHT22) or on 5 s of failed sensor reads (latched until STOP).
+// Hard cut-off at 60 C (DHT11; 70 C with a DHT22) or after 5 failed sensor reads in a row (10 s);
+// both latch until STOP and are reported to the host ($ERR,1,RUN,12 / 13).
 // Commands may be typed in the Serial Monitor without a checksum, e.g.
 //   $CFG,1,P,45,1,10,50,2000      $RUN,1      $STOP,1
 //   CFG fields: mode, setpoint C, hysteresis band C, MA window, Kp, TPROP window ms[, Ki per s]
@@ -87,6 +88,8 @@ static void maPush(int16_t v, uint16_t window) {
     if (runs[rHead].n == 0) { rHead = (rHead + 1) % RUNS; rCount--; }
   }
 }
+uint8_t badReads = 0;                            // consecutive failed DHT reads
+const uint8_t SENSOR_FAIL_READS = 5;             // 5 in a row (10 s) is a sensor fault; fewer are noise
 float tRaw = NAN; uint32_t lastGoodRead = 0, lastDht = 0, lastTs = 0, lastTel = 0, tStart = 0, lastHost = 0;
 bool running = false, hostControlled = false, heatState = false;
 uint8_t flags = 0; uint32_t seq = 0;
@@ -232,9 +235,20 @@ void loop() {
   if (now - lastDht >= DHT_PERIOD_MS) {
     lastDht = now;
     float v = dht.readTemperature();
-    if (!isnan(v)) { tRaw = v; lastGoodRead = now; }
-    if (now - lastGoodRead > 5000) { tRaw = NAN; if (running) { stopAll(); flags |= F_SENSOR; } }
-    if (!isnan(tRaw) && tRaw >= T_CUTOFF) { stopAll(); flags |= F_OVERTEMP; }
+    if (!isnan(v)) { tRaw = v; lastGoodRead = now; badReads = 0; }
+    else {
+      // a DHT11 read fails now and then (timing or checksum); the last good value stands
+      if (badReads < 255) badReads++;
+      Serial.print(F("# DHT read failed, ")); Serial.print(badReads); Serial.println(F(" in a row"));
+    }
+    if (badReads >= SENSOR_FAIL_READS) {
+      tRaw = NAN;
+      if (running) { stopAll(); flags |= F_SENSOR; err("RUN", 12, "sensor: no valid reading for 10 s - heater off"); }
+    }
+    if (!isnan(tRaw) && tRaw >= T_CUTOFF && !(flags & F_OVERTEMP)) {
+      bool was = running; stopAll(); flags |= F_OVERTEMP;
+      if (was) err("RUN", 13, "over-temperature cut-off - heater off");
+    }
   }
   if (running && hostControlled && now - lastHost > 3000) { stopAll(); flags |= F_WATCHDOG; err("RUN", 10, "host silent >3 s - heater off"); }
   if (now - lastTs >= TS_MS) { lastTs += TS_MS; if (now - lastTs > TS_MS) lastTs = now; controlStep(now); }
