@@ -17,6 +17,8 @@ function mdl = build_temperature_simulink(outDir)
     new_system(mdl); cl = onCleanup(@() close_system(mdl, 0));
     set_param(mdl, 'Solver', 'ode45', 'RelTol', '1e-6', 'MaxStep', '0.01', 'StopTime', 'Tend', ...
         'SaveOutput', 'on', 'SaveFormat', 'Dataset');
+    % parameters first: a block's expression (R, J, ...) must never resolve to a variable of the same name in the base workspace
+    setVars(mdl, temperature_simulink_params(templab.temperature.defaultConfig()));
     B = @(lib, n, pos, varargin) add_block(lib, [mdl '/' n], 'Position', pos, varargin{:});
     % ------------------------------------------------ plant (deviation from ambient)
     B('simulink/Math Operations/Gain', 'Heater power', [560 40 620 70], 'Gain', 'eta*Pbulb');
@@ -82,7 +84,6 @@ function mdl = build_temperature_simulink(outDir)
               '5 PI / PID (limit uTop, anti-windup per run), 6 open loop. Ambient step: ambStep at tAmb. ' ...
               'Parameters come from temperature_lab (OPEN IN SIMULINK) or run_temperature_simulink(cfg).'];
     n.Position = [40 470 900 500];
-    setVars(mdl, temperature_simulink_params(templab.temperature.defaultConfig()));
     if ~exist(outDir, 'dir'), mkdir(outDir); end
     save_system(mdl, fullfile(outDir, [mdl '.slx']));
 end
