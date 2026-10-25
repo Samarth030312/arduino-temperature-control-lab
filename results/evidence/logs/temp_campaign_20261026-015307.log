@@ -1,0 +1,9 @@
+01:53:23  campaign on /dev/ttyUSB0, 16 steps; room 24.0 C; each run starts below 30.0 C
+01:53:24  T1  RUN  heater step to 50 °C (the DHT11's top), then cool  (from 24.0 C, cooled 0 s)
+02:23:31  T1  DONE heater step to 50 °C (the DHT11's top), then cool  1806 s  TEMP-R0001_20261026-022328_T1 [FINISHED]
+02:23:31  T2  RUN  on-off, 35 °C  (from 23.7 C, cooled 0 s)
+02:38:36  T2  DONE on-off, 35 °C  905 s  TEMP-R0002_20261026-023833_T2 [FINISHED]
+02:42:02  T2  RUN  on-off, 45 °C  (from 29.9 C, cooled 205 s)
+02:57:06  T2  DONE on-off, 45 °C  904 s  TEMP-R0003_20261026-025704_T2 [FINISHED]
+03:03:13  T2  RUN  on-off, 55 °C  (from 29.9 C, cooled 365 s)
+03:12:22  T2  DONE on-off, 55 °C  550 s  TEMP-R0004_20261026-031220_T2 [ABORTED: by the operator]

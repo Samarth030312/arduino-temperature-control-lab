@@ -1,0 +1,20 @@
+03:14:23  campaign on /dev/ttyUSB0, 9 steps; room 36.9 C; each run starts below 99.0 C
+03:14:25  T1  RUN  heater step to 50 °C (the DHT11's top), then cool  (from 36.7 C, cooled 1 s; setpoint 40 C, 75 s)
+03:15:44  T1  DONE heater step to 50 °C (the DHT11's top), then cool  79 s  TEMP-R0005_20261026-031541_T1 [FINISHED]
+03:15:45  T2  RUN  on-off, 35 °C  (from 39.8 C, cooled 0 s; setpoint 43 C, 75 s)
+03:17:03  T2  DONE on-off, 35 °C  78 s  TEMP-R0006_20261026-031701_T2 [FINISHED]
+03:17:08  T3  RUN  hysteresis ±0.5 °C, 45 °C  (from 42.7 C, cooled 0 s; setpoint 46 C, 75 s)
+03:18:26  T3  DONE hysteresis ±0.5 °C, 45 °C  78 s  TEMP-R0007_20261026-031823_T3 [FINISHED]
+03:18:27  T3  RUN  hysteresis ±2 °C, 45 °C  (from 46.6 C, cooled 0 s; setpoint 50 C, 75 s)
+03:19:44  T3  DONE hysteresis ±2 °C, 45 °C  78 s  TEMP-R0008_20261026-031942_T3 [FINISHED]
+03:19:46  T4  RUN  N = 10, 45 °C  (from 48.5 C, cooled 0 s; setpoint 52 C, 75 s)
+03:21:03  T4  DONE N = 10, 45 °C  78 s  TEMP-R0009_20261026-032101_T4 [FINISHED]
+03:21:04  T4  RUN  N = 500, 45 °C  (from 49.0 C, cooled 0 s; setpoint 52 C, 75 s)
+03:22:22  T4  DONE N = 500, 45 °C  78 s  TEMP-R0010_20261026-032219_T4 [FINISHED]
+03:22:23  T5  RUN  Kp 50, 45 °C  (from 49.2 C, cooled 0 s; setpoint 52 C, 75 s)
+03:23:41  T5  DONE Kp 50, 45 °C  78 s  TEMP-R0011_20261026-032338_T5 [FINISHED]
+03:23:42  T5  RUN  Kp 1, 45 °C  (from 47.9 C, cooled 0 s; setpoint 51 C, 75 s)
+03:25:00  T5  DONE Kp 1, 45 °C  78 s  TEMP-R0012_20261026-032457_T5 [FINISHED]
+03:25:01  T6  RUN  PI Kp 50 Ki 0.5, 45 °C  (from 41.1 C, cooled 0 s; setpoint 44 C, 75 s)
+03:26:19  T6  DONE PI Kp 50 Ki 0.5, 45 °C  78 s  TEMP-R0013_20261026-032616_T6 [FINISHED]
+03:26:19  campaign finished
