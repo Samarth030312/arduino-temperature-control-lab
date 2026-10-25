@@ -28,7 +28,7 @@ for t in tracked:
     if re.search(r'\.(mp4|avi|mov|mkv)$', t):
         errors.append(f'video tracked: {t}')
 
-vocab = {'VERIFIED_FROM_MANUAL', 'MEASURED', 'TESTED', 'ESTIMATED', 'ASSUMED', 'UNVERIFIED'}
+vocab = {'VERIFIED_FROM_MANUAL', 'VERIFIED_FROM_LABEL', 'MEASURED', 'TESTED', 'ESTIMATED', 'ASSUMED', 'UNVERIFIED'}
 params = ''
 for _name, _unit, s in re.findall(r"add\('([^']+)',[^'\n]*'([^']*)',\s*'([^']*)'", params):
     if s not in vocab:

@@ -1,14 +1,13 @@
 function h = tempRig(ax)
-%TEMPRIG  3-D temperature rig: bulb in its holder, DHT11, SSR, Uno and 16x2 LCD.
+%TEMPRIG  3-D temperature rig: bulb in its holder, DHT11, SSR and Uno.
 %
 %   h = templab.ui.tempRig(ax);   templab.ui.tempRigPose(h, powerPct, tempC, setpointC, tAmb, tMax)
 %
-%   Sizes: E27 holder D40 x 45 (typical), A60 bulb D60 x 105 (standard A60 shape),
-%   DHT11 module 15.5 x 12 x 5.5 (common breakout), SSR-40DA 62 x 45 x 23 (typical case;
-%   the lab relay's part number is not yet recorded, OI-T2), Uno 68.6 x 53.4, 1602 LCD
-%   module 80 x 36 (HD44780 board). The faint box is the heated zone of the model
-%   (dimensions in the physics panel; ASSUMED). The bulb glows with the delivered power,
-%   the zone tints with temperature, the SSR LED shows its input, the LCD shows the reading.
+%   Sizes: B22 bayonet holder D40 x 45 (typical), A55 bulb D55 x 100 (Philips clear 40 W),
+%   DHT11 module 15.5 x 12 x 5.5 (common breakout), Fotek SSR-40DA 62 x 45 x 23, Uno 68.6 x 53.4.
+%   The faint box is the heated zone of the model (dimensions in the physics panel; ASSUMED).
+%   The bulb glows with the delivered power, the zone tints with temperature, the SSR LED shows
+%   its input.
     K = templab.ui.palette();
     hold(ax, 'on'); axis(ax, 'equal'); axis(ax, 'off'); ax.Color = 'none'; ax.Clipping = 'off';
     try, ax.Toolbar.Visible = 'off'; catch, end
@@ -20,7 +19,7 @@ function h = tempRig(ax)
     % heated zone (faint box) and its tint
     Z = [0.24 0.20 0.20]; c0 = [0 0.02 zB + Z(3) / 2];
     h.zone = box3(c0, Z, [0.4 0.6 0.9], ax); set(h.zone, 'FaceColor', 'none', 'EdgeColor', [0.40 0.60 0.90], 'LineWidth', 1.2);   % outline only: fast
-    % E27 holder and A60 bulb (bulb axis vertical)
+    % B22 holder and bulb (bulb axis vertical)
     cyl(ax, [0 0.02 zB], 0.020, 0.045, [0.92 0.92 0.90]);
     cyl(ax, [0 0.02 zB + 0.045], 0.0135, 0.018, [0.75 0.75 0.78]);              % screw base
     [X, Y, Zs] = sphere(28); r = 0.030;
@@ -37,7 +36,7 @@ function h = tempRig(ax)
     plot3(ax, [pS(1) pS(1)], [pS(2) pS(2)], [zB pS(3) - 0.006], '-', 'Color', K.dim, 'LineWidth', 1.5);
     box3(pS, [0.0155 0.0055 0.012], [0.15 0.45 0.85], ax);
     for k = -2:2, plot3(ax, pS(1) + [-0.006 0.006], pS(2) - 0.0029 * [1 1], pS(3) + 0.002 * k * [1 1], '-', 'Color', [0.85 0.9 1], 'LineWidth', 1); end
-    % SSR-40DA, Uno, LCD in front of the zone
+    % SSR-40DA and Uno in front of the zone
     pR = [-0.10 -0.14 zB + 0.0115];
     box3(pR, [0.062 0.045 0.023], [0.95 0.95 0.93], ax);
     box3(pR + [0 0 0.0118], [0.050 0.030 0.0006], [0.12 0.12 0.13], ax);
@@ -46,21 +45,15 @@ function h = tempRig(ax)
     box3(pU, [0.0686 0.0534 0.0016], [0.00 0.44 0.55], ax);
     box3(pU + [-0.030 0.012 0.0063], [0.016 0.012 0.011], [0.70 0.72 0.75], ax);
     box3(pU + [0.010 -0.006 0.002], [0.035 0.0075 0.003], [0.06 0.06 0.07], ax);
-    pL = [0.115 -0.13 zB + 0.018];
-    box3(pL, [0.080 0.006 0.036], [0.05 0.40 0.20], ax);                        % upright LCD board
-    box3(pL + [0 -0.0035 0.001], [0.064 0.0012 0.016], [0.12 0.30 0.75], ax);   % screen
-    h.lcd1 = text(ax, pL(1) - 0.030, pL(2) - 0.006, pL(3) + 0.0055, 'T --.- C', 'Color', [0.85 0.95 1], 'FontName', K.mono, 'FontSize', 7, 'FontWeight', 'bold');
-    h.lcd2 = text(ax, pL(1) - 0.030, pL(2) - 0.006, pL(3) - 0.0035, 'S --  H ---%', 'Color', [0.85 0.95 1], 'FontName', K.mono, 'FontSize', 7, 'FontWeight', 'bold');
     % cables: mains to bulb through the SSR (load side), DHT to the Uno, SSR input from D9
     cable(ax, [pR + [-0.02 0.02 0.01]; -0.08 -0.02 0.02; -0.005 0.02 zB + 0.02], [0.08 0.08 0.08], 2.4);
     cable(ax, [pR + [0.02 0.02 0.01]; -0.04 -0.03 0.02; 0.005 0.02 zB + 0.02], [0.55 0.35 0.15], 2.4);
     cable(ax, [-0.17 -0.14 zB + 0.01; -0.15 -0.14 zB + 0.01; pR + [-0.031 0 0]], [0.08 0.08 0.08], 3);
     cable(ax, [pS - [0 0 0.006]; 0.07 -0.06 0.03; pU + [0.02 0.0245 0.004]], [0.95 0.85 0.20], 1.2);
     cable(ax, [pU + [-0.01 0.0245 0.004]; -0.05 -0.12 0.02; pR + [0.031 0 0]], [0.25 0.45 0.95], 1.2);
-    cable(ax, [pU + [0.03 -0.0245 0.004]; 0.08 -0.16 0.02; pL + [-0.04 0 0]], [0.85 0.15 0.15], 1.0);
     lab = @(p, s) text(ax, p(1), p(2), p(3), s, 'Color', K.dim, 'FontSize', 9, 'HorizontalAlignment', 'center');
-    h.labels = [lab([0 0.02 zB + 0.17], 'bulb · E27'), lab(pS + [0 0 0.02], 'DHT11'), lab(pR + [0 0 0.03], 'SSR'), ...
-                lab(pU + [0 0 0.02], 'Arduino Uno'), lab(pL + [0 0 0.028], 'LCD 16x2')];
+    h.labels = [lab([0 0.02 zB + 0.17], 'bulb · 40 W · B22'), lab(pS + [0 0 0.02], 'DHT11'), lab(pR + [0 0 0.03], 'SSR-40DA'), ...
+                lab(pU + [0 0 0.02], 'Arduino Uno')];
     light(ax, 'Position', [0.6 -0.8 1.0]); light(ax, 'Position', [-0.5 0.5 0.6], 'Color', [0.35 0.35 0.40]);
     h.K = K;
     templab.ui.tempRigPose(h, 0, 30, 45, 30, 84);

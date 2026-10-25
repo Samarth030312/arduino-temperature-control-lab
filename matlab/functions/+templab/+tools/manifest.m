@@ -19,7 +19,7 @@ function M = manifest()
 
     M.core = 'arduino:avr@1.8.8';
     M.fqbn = 'arduino:avr:uno';
-    M.libs = {'DHT sensor library@1.4.7', 'Adafruit Unified Sensor@1.1.15', 'LiquidCrystal@1.0.7', 'LiquidCrystal I2C@1.1.2'};
+    M.libs = {'DHT sensor library@1.4.7', 'Adafruit Unified Sensor@1.1.15'};
 
     % sketch folders, relative to the repository root
     M.sketches = struct('temperature', fullfile('firmware', 'temperature_controller'));

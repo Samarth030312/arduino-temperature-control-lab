@@ -5,8 +5,8 @@ function [P, D] = physics(spec)
 %   [P, D] = templab.temperature.physics(spec)        % any subset of D.spec's fields
 %
 %   Inputs (spec):
-%     bulb_W 60, bulb_V 230 (its rating), mains_V 230 (what the socket gives),
-%     eta 0.90 (share of electrical power that becomes heat near the sensor: ~0.9 for an
+%     bulb_W 40, bulb_V 230 (its rating), mains_V 230 (what the socket gives),
+%     eta 0.95 (share of electrical power that becomes heat near the sensor: ~0.9 for an
 %       incandescent or halogen bulb, ~0.3 for an LED bulb),
 %     box_L, box_W, box_H 0.30 m (enclosure inside), U 1.85 W/m^2K (overall wall loss,
 %       incl. convection; ~1-2 thick cardboard / wood, ~4-6 thin plastic or metal),
@@ -20,7 +20,7 @@ function [P, D] = physics(spec)
 %     K = eta P_el R_th (rise at full power), tau = R_th C, theta, plus the sensor lag
 %   P is templab.temperature.params() with these values in place, for simulate; D holds the
 %   derived numbers.
-    def = struct('bulb_W', 60, 'bulb_V', 230, 'mains_V', 230, 'eta', 0.90, 'box_L', 0.30, 'box_W', 0.30, ...
+    def = struct('bulb_W', 40, 'bulb_V', 230, 'mains_V', 230, 'eta', 0.95, 'box_L', 0.30, 'box_W', 0.30, ...
         'box_H', 0.30, 'U', 1.85, 'm_struct', 0.13, 'c_struct', 900, 'T_amb', 30, 'theta', 3, 'tau_s', 10);
     if nargin < 1, spec = struct(); end
     for f = fieldnames(def)', if ~isfield(spec, f{1}) || isempty(spec.(f{1})), spec.(f{1}) = def.(f{1}); end, end

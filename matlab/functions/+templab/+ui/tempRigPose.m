@@ -1,5 +1,5 @@
 function tempRigPose(h, powerPct, tempC, spC, tAmb, tMax)
-%TEMPRIGPOSE  Glow, tint and readouts of an templab.ui.tempRig scene.
+%TEMPRIGPOSE  Glow, tint and SSR LED of a templab.ui.tempRig scene.
 %   powerPct  heater power delivered now (0-100 %); tempC the reading; spC the setpoint;
 %   tAmb, tMax the ambient and the full-power temperature (for the tint scale).
     if ~isvalid(h.bulb), return; end
@@ -11,6 +11,4 @@ function tempRigPose(h, powerPct, tempC, spC, tAmb, tMax)
     x = 0; if isfinite(tempC) && tMax > tAmb, x = min(max((tempC - tAmb) / (tMax - tAmb), 0), 1); end
     set(h.zone, 'EdgeColor', [0.40 0.60 0.90] + x * ([1.00 0.35 0.15] - [0.40 0.60 0.90]), 'LineWidth', 1 + 2 * x);
     set(h.ssrLed, 'MarkerFaceColor', [0.3 0.05 0.05] + (p > 0) * [0.7 0.1 0.05]);
-    if isfinite(tempC), h.lcd1.String = sprintf('T %5.1f C', tempC); else, h.lcd1.String = 'T  --.- C'; end
-    h.lcd2.String = sprintf('S %4.0f  H %3.0f%%', spC, 100 * p);
 end

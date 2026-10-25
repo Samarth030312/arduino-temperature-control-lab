@@ -14,7 +14,8 @@ function testPSteadyStateErrorMatchesTheory(tc)
         c.P.noise = 0; c.Tend = 1500;
         S = templab.temperature.simulate(c); P = c.P;
         e = (c.setpoint - P.T_amb) / (1 + Kp * P.eta_heat * P.P_bulb * P.R_th / 255);
-        tc.verifyEqual(S.metrics.mean_error, e, 'AbsTol', 0.15, sprintf('Kp %g', Kp));
+        % the DHT11 reads whole degrees: the loop settles where the rounded reading balances, within half a step
+        tc.verifyEqual(S.metrics.mean_error, e, 'AbsTol', P.res_dht11 / 2, sprintf('Kp %g', Kp));
     end
 end
 

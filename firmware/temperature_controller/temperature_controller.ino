@@ -1,5 +1,6 @@
-// Arduino temperature control lab: bulb heater, DHT11/22, SSR, LCD
-// Arduino Uno + DHT11 (lab sensor; DHT22 with -DDHT_KIND=DHT22) + SSR + bulb + 16x2 LCD.
+// Arduino temperature control lab: bulb heater, DHT11/22, SSR
+// Arduino Uno + DHT11 (lab sensor; DHT22 with -DDHT_KIND=DHT22) + zero-cross SSR + 40 W bulb.
+// No display on the board: the MATLAB app (temperature_lab) shows everything.
 //
 // Course tasks (TEMP handout SRC-015, course file SRC-001 p.17): on-off, moving average
 // (N = 10 / 500 at Ts = 0.01 s), P control (Kp = 1, 2, 50, 100, 500; u = 0..255 on pin 9).
@@ -12,12 +13,10 @@
 //   D7   DHT11 / DHT22 data (10 k pull-up to 5 V; most breakout modules have it)
 //   D9   SSR input + (course: "relay positive terminal to PWM pin 9")
 //   GND  SSR input -
-//   D8   START / STOP pushbutton to GND (normally open)
-//   LCD parallel 4-bit: RS D12, E D11, D4 D5, D5 D4, D6 D3, D7 D2 (Arduino LCD example)
-//   or LCD with I2C backpack: SDA A4, SCL A5 (compile with -DLCD_I2C)
+//   D8   optional START / STOP pushbutton to GND (normally open)
 //
 // SAFETY: heater starts OFF and only runs after RUN (MATLAB) or the button.
-// Hard cut-off at 70 C or on 5 s of failed sensor reads (latched until STOP).
+// Hard cut-off at 60 C (DHT11; 70 C with a DHT22) or on 5 s of failed sensor reads (latched until STOP).
 // Commands may be typed in the Serial Monitor without a checksum, e.g.
 //   $CFG,1,P,45,1,10,50,2000      $RUN,1      $STOP,1
 //   CFG fields: mode, setpoint C, hysteresis band C, MA window, Kp, TPROP window ms[, Ki per s]
@@ -26,14 +25,6 @@
 // NOT yet run on hardware.
 
 #include <DHT.h>
-#ifdef LCD_I2C
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-#else
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-#endif
 
 #ifndef DHT_KIND
 #define DHT_KIND DHT11            // lab sensor (owner, 2026-10-21); -DDHT_KIND=DHT22 for the other one
@@ -45,8 +36,13 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 const uint8_t PIN_DHT = 7, PIN_SSR = 9, PIN_BTN = 8;
 const uint16_t TS_MS = 10;                       // course sampling time 0.01 s
-const uint16_t DHT_PERIOD_MS = (DHT_KIND == DHT11) ? 1000 : 2000;
-const float T_CUTOFF = 70.0f;
+// A new reading every 2 s: the DHT11 datasheet (Aosong) asks for more than 2 s between readings,
+// and the DHT library (1.4.7, MIN_INTERVAL 2000) returns its cached value to anything faster.
+const uint16_t DHT_PERIOD_MS = 2000;
+// Over-temperature cut-off. The DHT11 is specified for 0-50 C (+/- 2 C): 60 C lets the 55 C
+// set-point run while keeping the sensor and the box out of real heat; above 50 C its readings
+// are outside the datasheet. The DHT22 reads to 80 C.
+const float T_CUTOFF = (DHT_KIND == DHT11) ? 60.0f : 70.0f;
 const uint16_t MA_MAX = 500;                     // longest window (course: 500)
 const uint8_t RUNS = 48;                         // run-length slots (see MovingAverage)
 const uint8_t F_RUNNING = 1, F_SENSOR = 2, F_OVERTEMP = 4, F_WATCHDOG = 8, F_BUTTON = 16;
@@ -209,27 +205,10 @@ static void sendTelemetry(uint32_t now) {
   sendFrame(body);
 }
 
-static void updateLcd() {
-  char l1[17], l2[17], tr[7];
-  if (isnan(tRaw)) strcpy(tr, " --.-"); else dtostrf(tRaw, 5, 1, tr);
-  snprintf(l1, sizeof(l1), "T=%sC SP=%2d", tr, (int)cfg.setpoint);
-  if (flags & F_OVERTEMP) snprintf(l2, sizeof(l2), "OVER-TEMP STOP  ");
-  else if (flags & F_SENSOR) snprintf(l2, sizeof(l2), "SENSOR FAULT    ");
-  else if (!running) snprintf(l2, sizeof(l2), "%-5s  stopped  ", MODE_NAMES[cfg.mode]);
-  else { char e[7]; dtostrf(isnan(tRaw) ? 0 : cfg.setpoint - tRaw, 5, 1, e); snprintf(l2, sizeof(l2), "e=%s u=%3d   ", e, u); }
-  lcd.setCursor(0, 0); lcd.print(l1); lcd.setCursor(0, 1); lcd.print(l2);
-}
-
 void setup() {
   pinMode(PIN_SSR, OUTPUT); heater(false);
   pinMode(PIN_BTN, INPUT_PULLUP);
   Serial.begin(115200);
-#ifdef LCD_I2C
-  lcd.init(); lcd.backlight();
-#else
-  lcd.begin(16, 2);
-#endif
-  lcd.print("Temp control lab");
   dht.begin();
   char b[48]; snprintf(b, sizeof(b), "HELLO,1,%s,%s,%s", FW_NAME, FW_REV, DHT_KIND == DHT11 ? "DHT11" : "DHT22"); sendFrame(b);
   Serial.println(F("# commands: $CFG,1,<ONOFF|HYST|MA|P|TPROP|STEP|PI>,sp,hyst,N,Kp,tpropMs[,Ki]  $RUN,1  $STOP,1"));
@@ -256,7 +235,6 @@ void loop() {
     if (!isnan(v)) { tRaw = v; lastGoodRead = now; }
     if (now - lastGoodRead > 5000) { tRaw = NAN; if (running) { stopAll(); flags |= F_SENSOR; } }
     if (!isnan(tRaw) && tRaw >= T_CUTOFF) { stopAll(); flags |= F_OVERTEMP; }
-    updateLcd();
   }
   if (running && hostControlled && now - lastHost > 3000) { stopAll(); flags |= F_WATCHDOG; err("RUN", 10, "host silent >3 s - heater off"); }
   if (now - lastTs >= TS_MS) { lastTs += TS_MS; if (now - lastTs > TS_MS) lastTs = now; controlStep(now); }

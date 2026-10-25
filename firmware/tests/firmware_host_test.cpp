@@ -36,7 +36,6 @@ void analogWrite(uint8_t p, int v) { g_pwm[p] = v; g_pin[p] = v > 0; }
 char *dtostrf(double v, signed char w, unsigned char p, char *b) { sprintf(b, "%*.*f", w, p, v); return b; }
 HostSerial Serial;
 float g_dhtValue = 30; bool g_dhtFail = false;
-std::string g_lcd[2];
 
 // ------------------------------------------------------------------ emulated bulb + sensor
 struct Plant {
@@ -105,10 +104,10 @@ static int runPty(double speedup) {
 int main(int argc, char **argv) {
   if (argc > 1 && std::string(argv[1]) == "--pty") return runPty(argc > 2 ? atof(argv[2]) : 1.0);
   printf("temperature firmware host test (emulated bulb, DHT11)\n");
-  setup(); runFor(2, false);
+  setup(); runFor(3, false);                            // the first reading comes 2 s after start
   CHECK(Serial.out.find("$HELLO,1,temperature_lab,dev,DHT11*") != std::string::npos, "HELLO reports the DHT11 build");
   CHECK(g_pwm[PIN_SSR] == 0, "heater OFF after power-up");
-  CHECK(g_lcd[0].find("T=") == 0, "LCD shows the temperature");
+  CHECK(Serial.out.find("$TTEL,1,") != std::string::npos, "telemetry flows after power-up (the app is the display)");
 
   // ON-OFF at 45 C: reaches the band and switches; never above the cut-off
   send("CFG,1,ONOFF,45,1,10,50,2000"); send("RUN,1"); runFor(600);
@@ -148,10 +147,12 @@ int main(int argc, char **argv) {
   CHECK(g_pwm[PIN_SSR] == 0, "STEP: heater stays off while cooling");
   CHECK(plant.T < Tpeak - 5, "STEP: temperature falls after the switch-off (cooling recorded)");
 
-  // safety: over-temperature cut-off at 70 C latches until STOP
-  reset(30); plant.K = 80; send("CFG,1,ONOFF,65,1,10,50,2000"); send("RUN,1");
-  g_dhtFail = false; plant.T = 69; runFor(1); plant.T = 71; runFor(3);
-  CHECK(!running && (flags & F_OVERTEMP) && g_pwm[PIN_SSR] == 0, "70 C cut-off: heater off and latched");
+  // safety: over-temperature cut-off (60 C with the DHT11) latches until STOP; 55 C still runs
+  reset(30); plant.K = 80; send("CFG,1,ONOFF,55,1,10,50,2000"); send("RUN,1");
+  g_dhtFail = false; plant.T = 58; runFor(3);               // (until the next reading the bulb may still heat)
+  CHECK(running && !(flags & F_OVERTEMP), "58 C: below the cut-off, the 55 C set-point can run");
+  plant.T = 61; runFor(3);
+  CHECK(!running && (flags & F_OVERTEMP) && g_pwm[PIN_SSR] == 0, "60 C cut-off: heater off and latched");
   send("RUN,1"); runFor(0.2);
   CHECK(Serial.out.find("fault latched") != std::string::npos, "RUN refused while the cut-off is latched");
   plant.K = 54;

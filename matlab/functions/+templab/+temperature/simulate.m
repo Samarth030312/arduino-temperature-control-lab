@@ -27,6 +27,7 @@ function S = simulate(c)
     is11 = strcmp(c.sensor, 'DHT11');
     per = P.per_dht22; res = P.res_dht22; tau = P.tau_dht22;
     if is11, per = P.per_dht11; res = P.res_dht11; tau = P.tau_dht11; end
+    Tcut = P.T_cutoff; if ~is11 && isfield(P, 'T_cutoff_dht22'), Tcut = P.T_cutoff_dht22; end
     nPer = round(per / dt);
     nDel = max(1, round(P.delay / dt));
     rs = RandStream('mt19937ar', 'Seed', c.seed);
@@ -96,7 +97,7 @@ function S = simulate(c)
                 end
             otherwise, error('templab:temperature:mode', 'unknown mode %s', c.mode);
         end
-        if Traw >= P.T_cutoff, cutoff = true; end
+        if Traw >= Tcut, cutoff = true; end
         if cutoff, heatFrac = 0; end
         on = heatFrac > 0;
         if on ~= lastHeat && k > 1, switches = switches + 1; end

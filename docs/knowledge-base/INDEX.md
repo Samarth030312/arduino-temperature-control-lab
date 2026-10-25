@@ -41,6 +41,7 @@ Every important technical claim must be classified as one of:
 | Status | Meaning |
 |---|---|
 | VERIFIED_FROM_MANUAL | Stated in a registered source; page cited |
+| VERIFIED_FROM_LABEL | Read off the part itself (its label or marking); who read it and when cited |
 | MEASURED | Measured on this lab's apparatus; run ID cited |
 | TESTED | Behaviour confirmed by a run or automated test; ID cited |
 | ESTIMATED | Derived or typical value; derivation stated |

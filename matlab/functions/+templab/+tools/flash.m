@@ -3,7 +3,7 @@ function R = flash(which, port, opts)
 %
 %   R = templab.tools.flash('motor', 'COM5')
 %   R = templab.tools.flash('motor', '/dev/cu.usbserial-1420')
-%   R = templab.tools.flash('temperature', '/dev/ttyACM0', 'Defines', {'LCD_I2C', 'DHT_KIND=DHT11'})
+%   R = templab.tools.flash('temperature', '/dev/ttyACM0', 'Defines', {'DHT_KIND=DHT11'})
 %   R = templab.tools.flash('motor', '', 'UploadOnly', false)   % compile only (no port)
 %
 %   which   'motor', 'temperature' or 'level' (templab.tools.manifest().sketches)

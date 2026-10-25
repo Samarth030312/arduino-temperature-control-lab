@@ -38,7 +38,7 @@ function app = temperature_lab()
     D.scene = @(ax) templab.ui.tempRig(ax);
     D.pose = @pose;
     D.cfg = @(v) {v.mode, v.setpoint, v.hyst, round(v.window), v.Kp, round(1000 * v.tprop), v.Ki};
-    D.defines = @(v) [{['DHT_KIND=' v.sensor]}, repmat({'LCD_I2C'}, 1, strcmp(v.lcd, 'i2c'))];
+    D.defines = @(v) {['DHT_KIND=' v.sensor]};
     D.fromTel = @fromTel;
     D.simulink = @openSimulink;
     app = templab.ui.missionControl(D);
@@ -67,15 +67,13 @@ function C = controls()
     C(end + 1) = d('sensor', 'sensor', 'CONTROLLER', {'DHT11 (lab)', 'DHT22'}, {'DHT11', 'DHT22'}, 'DHT11', [], '');
     C(end + 1) = d('ssr', 'SSR drive', 'CONTROLLER', {'zero-cross SSR on 490 Hz PWM (as wired)', 'ideal: power = u/255'}, {'pwm490', 'average'}, 'pwm490', isMode('P', 'PI', 'PID'), '');
     C(end + 1) = n('Tend', 'run length (s)', 'CONTROLLER', [10 7200], '%.0f', 900, [], '');
-    C(end + 1) = d('lcd', 'LCD (firmware build)', 'CONTROLLER', {'parallel 16x2 (D12, D11, D5-D2)', 'I2C backpack (A4, A5)'}, ...
-        {'parallel', 'i2c'}, 'parallel', [], 'Which LCD the bench has; FLASH FIRMWARE builds for it');
     C(end + 1) = n('ambStep', 'ambient step (°C)', 'DISTURBANCE', [-20 20], '%.1f', 0, [], 'A sudden change of the room temperature');
     C(end + 1) = n('tAmb', 'ambient step at t (s)', 'DISTURBANCE', [0 7200], '%.0f', 600, [], '');
     S = 'BULB · ENCLOSURE · SENSOR  (→ physics)';
-    C(end + 1) = n('bulb_W', 'bulb rating (W)', S, [5 500], '%.0f', 60, [], 'From the bulb''s label (ASSUMED 60 W until read)');
+    C(end + 1) = n('bulb_W', 'bulb rating (W)', S, [5 500], '%.0f', 40, [], 'From the bulb''s label (the lab''s: Philips clear 40 W, 415 lm)');
     C(end + 1) = n('bulb_V', 'bulb rated voltage (V)', S, [6 260], '%.0f', 230, [], '');
     C(end + 1) = n('mains_V', 'supply voltage (V)', S, [0 260], '%.0f', 230, [], 'Power scales as (V / V_rated)^1.6 for a filament');
-    C(end + 1) = n('eta', 'heat fraction η', S, [0.05 1], '%.2f', 0.9, [], '~0.9 incandescent / halogen, ~0.3 LED');
+    C(end + 1) = n('eta', 'heat fraction η', S, [0.05 1], '%.2f', 0.95, [], '~0.95 incandescent / halogen (about 5 % leaves as light), ~0.3 LED');
     C(end + 1) = n('box_L', 'zone length (m)', S, [0.05 2], '%.2f', 0.30, [], 'The air volume heated with the sensor');
     C(end + 1) = n('box_W', 'zone width (m)', S, [0.05 2], '%.2f', 0.30, [], '');
     C(end + 1) = n('box_H', 'zone height (m)', S, [0.05 2], '%.2f', 0.30, [], '');
@@ -99,7 +97,7 @@ end
 function M = missions()
     M = struct('tag', {}, 'short', {}, 'brief', {}, 'presets', {});
     add('T1', 'Heating curve', 'The bulb fully on from room temperature, then off: read K, tau and theta from the curve, and compare heating with cooling.', ...
-        {'heater step to 60 °C, then cool', struct('mode', 'STEP', 'setpoint', 60, 'Tend', 1800); ...
+        {'heater step to 50 °C (the DHT11''s top), then cool', struct('mode', 'STEP', 'setpoint', 50, 'Tend', 1800); ...
          'open loop at 100 %', struct('mode', 'OL', 'olPct', 100, 'Tend', 1200); ...
          'open loop at 50 %', struct('mode', 'OL', 'olPct', 50, 'Tend', 1200)});
     add('T2', 'On-off', 'The bulb on below the setpoint, off above. The temperature settles into a cycle; the bulb flickers.', ...

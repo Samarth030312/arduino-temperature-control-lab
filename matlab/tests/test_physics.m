@@ -5,15 +5,15 @@ end
 
 function testTemperatureFromTheBulbAndBox(tc)
     [~, D] = templab.temperature.physics();
-    tc.verifyEqual(D.K, 0.9 * 60 * D.R_th, 'RelTol', 1e-12);
+    tc.verifyEqual(D.K, D.spec.eta * D.spec.bulb_W * D.R_th, 'RelTol', 1e-12);
     tc.verifyEqual(D.tau, D.R_th * D.C, 'RelTol', 1e-12);
     [~, D2] = templab.temperature.physics(struct('mains_V', 115));
-    tc.verifyEqual(D2.P_el, 60 * 0.5^1.6, 'RelTol', 1e-12, 'filament power at half voltage');
+    tc.verifyEqual(D2.P_el, D2.spec.bulb_W * 0.5^1.6, 'RelTol', 1e-12, 'filament power at half voltage');
 end
 
 function testTemperatureWindupAndAmbient(tc)
     [P, ~] = templab.temperature.physics();
-    c = templab.temperature.defaultConfig(); c.P = P; c.mode = 'PI'; c.Kp = 50; c.Ki = 0.5; c.Tend = 1500; c.uMaxPct = 40;
+    c = templab.temperature.defaultConfig(); c.P = P; c.mode = 'PI'; c.Kp = 50; c.Ki = 0.5; c.Tend = 1500; c.uMaxPct = 60;   % 60 % of the bulb: enough to reach 45 C, so the windup shows
     c.antiWindup = false; Sw = templab.temperature.simulate(c);
     c.antiWindup = true; Sa = templab.temperature.simulate(c);
     tc.verifyGreaterThan(max(Sw.Traw), max(Sa.Traw) + 2, 'a plain integrator overshoots after saturation');
