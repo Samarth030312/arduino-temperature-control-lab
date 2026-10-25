@@ -66,7 +66,7 @@ less flicker. Both are simulated in `temperature_lab`.
 
 ## 5. Bring-up order
 
-1. Low-voltage side only (no mains plugged in). Upload: `scripts/setup/upload temperature /dev/ttyACM0`.
+1. Low-voltage side only (no mains plugged in). Upload: `scripts/setup/upload /dev/ttyACM0`.
 2. Serial Monitor 115200: `$HELLO,1,temperature_plant,dev,DHT11`; then `$TTEL` lines every
    0.1 s with a sensible room temperature. LCD shows `T=..C SP=45`.
 3. Type `$CFG,1,ONOFF,35,1,10,50,2000` then `$RUN,1`: the SSR input LED should light (bulb not
