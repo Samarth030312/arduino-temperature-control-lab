@@ -13,6 +13,8 @@ function w = temperature_simulink_params(c)
     w.uTop = 255 * getf(c, 'uMaxPct', 100) / 100;
     w.ambStep = getf(c, 'ambStep', 0); w.tAmb = min(getf(c, 'tAmb', 1e9), 1e9);
     w.olPct = getf(c, 'olPct', 100);
+    w.dT0 = getf(c, 'T0', P.T_amb) - P.T_amb;            % start above the room (c.T0, as in simulate)
+    if ~isfinite(w.dT0), w.dT0 = 0; end
     if ~isfinite(w.SP), w.SP = 0; end
     if is11, w.tauS = P.tau_dht11; w.perDHT = P.per_dht11; w.resDHT = P.res_dht11;
     else,    w.tauS = P.tau_dht22; w.perDHT = P.per_dht22; w.resDHT = P.res_dht22; end

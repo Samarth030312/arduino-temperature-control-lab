@@ -21,7 +21,7 @@ function P = params()
     add('per_dht22', 2,     's',   'ESTIMATED', 'SRC-009', 'AM2302 minimum sampling period 2 s (datasheet not yet filed)');
     add('per_dht11', 2,     's',   'VERIFIED_FROM_MANUAL', 'Aosong DHT11 manual; DHT library 1.4.7', 'more than 2 s between readings (Aosong); the library returns its cached value to faster reads (MIN_INTERVAL 2000 ms)');
     add('res_dht22', 0.1,   'degC','ESTIMATED', 'SRC-009', 'reported resolution');
-    add('res_dht11', 1.0,   'degC','VERIFIED_FROM_MANUAL', 'Aosong DHT11 manual', '1 C resolution (integer readings)');
+    add('res_dht11', 0.1,   'degC','MEASURED', 'TEMP-R0001_20261026-022328_T1', 'the lab DHT11 reports tenths (steps of 0.1 C seen); the Aosong manual states 1 C for older parts');
     add('noise',     0.05,  'degC','ESTIMATED', '',     'sensor noise, 1 sigma');
     add('range_dht11', [0 50], 'degC', 'VERIFIED_FROM_MANUAL', 'Aosong DHT11 manual', 'measuring range 0-50 C; above 50 C the readings are outside the specification');
     add('acc_dht11', 2,     'degC','VERIFIED_FROM_MANUAL', 'Aosong DHT11 manual', 'accuracy +/- 2 C');

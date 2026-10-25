@@ -19,10 +19,16 @@ c.mode = 'PI'; c.setpoint = 45; c.Kp = 50; c.Ki = 0.5; c.Tend = 1500;
 c.ssr = 'average';                                 % Simulink models the SSR's average power
 R = run_temperature_simulink(c);                   % Simulink
 S = templab.temperature.simulate(c);               % the same loop in MATLAB
+c.T0 = 45; R2 = run_temperature_simulink(c);       % start warmer than the room, in both
 ```
 
+A rig run is replayed with its own recorded settings and starting temperature, in both, by
+`temperature_replay_runs` (the 2026-10-26 runs: [session](../results/reports/temperature/2026-10-26/README.md)).
+
 `matlab/tests/test_simulink_model.m` runs on-off, hysteresis, moving average and P in both and
-checks they agree: mean reading within 0.3 °C, heater duty within 3 %, the heating phase within 0.05 °C.
+checks they agree: mean reading within 0.3 °C, heater duty within 3 %, the heating phase within
+0.05 °C, also from a start 20 °C above the room. The committed model is saved in R2023b's format,
+the oldest release CI tests.
 
 ## Blocks
 
@@ -38,7 +44,7 @@ flowchart LR
     ON & HY & MA & P & PI & OL --> U["u / 255"]
     U --> H["η P_bulb"] --> HB(("heat balance")) --> I["1/C ∫"] --> T["T above room"]
     T --> LOSS["1 / R_th"] --> HB
-    T --> DEL["transport delay θ"] --> LAG["DHT lag"] --> Q["quantiser 1 °C"] --> ZOH["ZOH 1 s"] --> M["reading"]
+    T --> DEL["transport delay θ"] --> LAG["DHT lag τs"] --> ZOH["ZOH: a value every 2 s"] --> Q["quantiser 0.1 °C"] --> M["reading"]
     AMB["room temperature step"] --> M
     M --> CTRL
 ```

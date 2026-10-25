@@ -91,15 +91,17 @@ glass instead of the air. Tape also lets go of hot glass.
   back is the circuit board.
 - **Inside a closed box with the bulb** (the model's default is 30 × 30 × 30 cm; cardboard or
   wood, the bulb at least 5 cm from every wall). The box makes runs repeatable (no drafts) and
-  lets the 55 °C setpoint be reached: with 40 W the model predicts about 68 °C at full power in
-  such a box, from a 30 °C room. In open air the reading depends on drafts and on the exact
-  distance.
+  lets the 55 °C setpoint be reached. Measured on the lab rig (run TEMP-R0001, sensor about
+  5 cm from the glass): full power settles about 32 °C above the room, near 56 °C from a 24 °C
+  room, so 55 °C is only just reachable. In open air the reading depends on drafts and on the
+  exact distance.
 - Then measure instead of guessing: mission **T1** heats with the bulb fully on to 50 °C and
   records the cooling; the app fits K, τ and θ to it. If the reading passes 50 °C within a
   minute, move the sensor further away.
 
-The firmware switches the bulb off at **60 °C** (DHT11; 70 °C with a DHT22), after **5 s without a
-valid reading**, and when MATLAB is silent for **3 s**. Above 50 °C the DHT11 is outside its
+The firmware switches the bulb off at **60 °C** (DHT11; 70 °C with a DHT22), after **5 failed
+reads in a row** (10 s; single failed reads are normal and ignored), and when MATLAB is silent
+for **3 s**. Each of these stops is reported to the app. Above 50 °C the DHT11 is outside its
 datasheet: runs at a 55 °C setpoint are valid as an experiment, but say so in a report.
 
 ## 5. Bring-up order

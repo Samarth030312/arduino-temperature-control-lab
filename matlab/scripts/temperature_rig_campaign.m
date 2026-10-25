@@ -4,6 +4,8 @@ function R = temperature_rig_campaign(port, steps, varargin)
 %   R = temperature_rig_campaign('/dev/ttyUSB0')                  % every experiment the rig can run
 %   R = temperature_rig_campaign('COM5', {'T2', 1; 'T5', 3})      % N x 2: mission, preset number
 %   ... 'CoolTo', 30, 'CoolMax', 900      start each run below 30 C, waiting at most 900 s
+%   ... 'Tend', 80, 'SpAbove', 3           short runs: 80 s each, setpoint 3 C above the reading
+%                                          at the start of the run (default: as in the preset)
 %
 %   Opens temperature_lab, connects, and for each step selects the mission and preset and runs it
 %   exactly as RUN ON RIG does: every run is saved and registered by the app. Before each run
@@ -13,7 +15,7 @@ function R = temperature_rig_campaign(port, steps, varargin)
 %   limit, a plain integrator, a simulated room step) are skipped and listed.
 %   Progress: results/evidence/logs/temp_campaign_<time>.log (+ .csv). The bulb is mains-powered:
 %   attend it.
-    o = struct('CoolTo', NaN, 'CoolMax', 900);
+    o = struct('CoolTo', NaN, 'CoolMax', 900, 'Tend', NaN, 'SpAbove', NaN);
     for k = 1:2:numel(varargin), o.(varargin{k}) = varargin{k + 1}; end
     if nargin < 2 || isempty(steps)
         steps = {'T1', 1; 'T2', 1; 'T2', 2; 'T2', 3; 'T3', 1; 'T3', 2; 'T3', 3; 'T4', 1; 'T4', 2; ...
@@ -35,8 +37,12 @@ function R = temperature_rig_campaign(port, steps, varargin)
         t0 = tic;
         while lastT() >= o.CoolTo && toc(t0) < o.CoolMax, pause(5); end
         Tstart = lastT();
+        if ~isnan(o.Tend), app.set('Tend', o.Tend); end
+        if ~isnan(o.SpAbove), app.set('setpoint', round(Tstart + o.SpAbove)); end
+        drawnow;
         n0 = height(templab.data.register());
-        say(sprintf('%s  RUN  %s  (from %.1f C, cooled %.0f s)', steps{s, 1}, label, Tstart, toc(t0)));
+        v = app.values();
+        say(sprintf('%s  RUN  %s  (from %.1f C, cooled %.0f s; setpoint %g C, %g s)', steps{s, 1}, label, Tstart, toc(t0), v.setpoint, v.Tend));
         t1 = tic; app.runRig(); pause(2);
         if ~app.state().on
             say(sprintf('%s  SKIP %s: %s', steps{s, 1}, label, app.ui.say.Text));

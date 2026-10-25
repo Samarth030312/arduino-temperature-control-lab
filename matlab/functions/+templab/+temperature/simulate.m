@@ -35,7 +35,8 @@ function S = simulate(c)
     dec = round(0.1 / dt); M = floor((N - 1) / dec) + 1;
     [tt, Tl, Tsl, Trl, Tfl, el, ul, hl, swl] = deal(nan(M, 1));
 
-    T = P.T_amb; Ts = P.T_amb; Traw = NaN;
+    T = P.T_amb; if isfield(c, 'T0') && isfinite(c.T0), T = c.T0; end    % c.T0: start warmer than the room
+    Ts = T; Traw = NaN;
     delayBuf = repmat(T, nDel, 1); dp = 1;
     W = max(1, round(c.window)); maBuf = zeros(W, 1); maN = 0; maSum = 0; mp = 1;
     heatState = false; lastHeat = false; switches = 0; cutoff = false; stepDone = false; piI = 0;

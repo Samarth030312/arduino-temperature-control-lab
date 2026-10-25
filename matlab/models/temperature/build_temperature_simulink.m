@@ -1,9 +1,9 @@
 function mdl = build_temperature_simulink(outDir)
-%BUILD_TEMPERATURE_SIMULINK  Generate temperature_plant.slx (course Assignment 2).
+%BUILD_TEMPERATURE_SIMULINK  Generate temperature_plant.slx: the bulb-heated box and its controllers.
 %
 %   Bulb heater + lumped thermal mass, transport delay, DHT sensor lag, DHT
-%   update (zero-order hold) and resolution (quantiser), and the course
-%   controllers selected by modeSel: 1 on-off, 2 on-off with hysteresis (Relay
+%   update (zero-order hold) and resolution (quantiser), and the controllers
+%   selected by modeSel: 1 on-off, 2 on-off with hysteresis (Relay
 %   block), 3 moving average (Discrete FIR, N taps) + on-off, 4 P clamped to
 %   0..uTop, 5 PI / PID (Discrete PID, output 0..uTop, clamping anti-windup or none,
 %   set per run), 6 open loop (fixed power olPct). An ambient step (ambStep at tAmb)
@@ -24,12 +24,15 @@ function mdl = build_temperature_simulink(outDir)
     B('simulink/Math Operations/Gain', 'Heater power', [560 40 620 70], 'Gain', 'eta*Pbulb');
     B('simulink/Math Operations/Sum', 'Heat balance', [660 40 680 80], 'Inputs', '+-');
     B('simulink/Math Operations/Gain', '1 over C', [710 45 750 75], 'Gain', '1/Cth');
-    B('simulink/Continuous/Integrator', 'dT above ambient', [780 45 810 75]);
+    B('simulink/Continuous/Integrator', 'dT above ambient', [780 45 810 75], 'InitialCondition', 'dT0');
     B('simulink/Math Operations/Gain', 'loss 1 over R', [700 110 750 140], 'Gain', '1/Rth', 'Orientation', 'left');
     B('simulink/Math Operations/Sum', 'minus ambient change', [770 110 790 140], 'Inputs', '+-', 'Orientation', 'left');
     B('simulink/Sources/Step', 'Ambient step', [820 180 850 210], 'Time', 'tAmb', 'Before', '0', 'After', 'ambStep');
-    B('simulink/Continuous/Transport Delay', 'Bulb to sensor', [850 45 900 75], 'DelayTime', 'delay', 'BufferSize', '4096');
-    B('simulink/Continuous/Transfer Fcn', 'DHT body lag', [930 45 1000 75], 'Denominator', '[tauS 1]');
+    B('simulink/Continuous/Transport Delay', 'Bulb to sensor', [850 45 900 75], 'DelayTime', 'delay', 'BufferSize', '4096', ...
+      'InitialOutput', 'dT0');
+    % first-order lag 1/(tauS s + 1) as a state-space block, so that it can start at dT0
+    B('simulink/Continuous/State-Space', 'DHT body lag', [930 45 1000 75], 'A', '-1/tauS', 'B', '1/tauS', ...
+      'C', '1', 'D', '0', 'InitialCondition', 'dT0');
     B('simulink/Math Operations/Bias', 'plus ambient', [1030 45 1070 75], 'Bias', 'Ta');
     B('simulink/Discrete/Zero-Order Hold', 'DHT update', [1100 45 1130 75], 'SampleTime', 'perDHT');
     B('simulink/Discontinuities/Quantizer', 'DHT resolution', [1160 45 1200 75], 'QuantizationInterval', 'resDHT');
@@ -85,7 +88,14 @@ function mdl = build_temperature_simulink(outDir)
               'Parameters come from temperature_lab (OPEN IN SIMULINK) or run_temperature_simulink(cfg).'];
     n.Position = [40 470 900 500];
     if ~exist(outDir, 'dir'), mkdir(outDir); end
-    save_system(mdl, fullfile(outDir, [mdl '.slx']));
+    f = fullfile(outDir, [mdl '.slx']);
+    save_system(mdl, f);
+    if ~isMATLABReleaseOlderThan('R2024a')          % R2023b is the oldest supported release: save in its format
+        tmp = tempname; mkdir(tmp); clt = onCleanup(@() rmdir(tmp, 's'));
+        Simulink.exportToVersion(mdl, fullfile(tmp, [mdl '.slx']), 'R2023b');
+        close_system(mdl, 0);
+        movefile(fullfile(tmp, [mdl '.slx']), f, 'f');
+    end
 end
 
 function setVars(mdl, w)

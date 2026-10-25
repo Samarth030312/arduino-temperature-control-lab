@@ -29,3 +29,17 @@ function testTemperatureModes(tc)
     end
 end
 
+
+function testStartAboveRoom(tc)
+    % a run that starts warm (c.T0): both start at T0 and cool or heat the same way
+    for mode = {'ONOFF', 'P'}
+        c = templab.temperature.defaultConfig(); c.mode = mode{1}; c.ssr = 'average'; c.P.noise = 0;
+        c.Tend = 300; c.T0 = c.P.T_amb + 20; c.setpoint = c.P.T_amb + 10;
+        M = templab.temperature.simulate(c);
+        R = run_temperature_simulink(c, tc.TestData.dir);
+        tc.verifyLessThan(abs(R.T(1) - c.T0), 1e-9, [mode{1} ': zone starts at T0']);
+        dMax = max(abs(M.T(M.t <= 60) - R.T(M.t <= 60)));
+        fprintf('  temperature %-6s from T0 = %.0f C: early max diff %.3f C\n', mode{1}, c.T0, dMax);
+        tc.verifyLessThan(dMax, 0.05, mode{1});
+    end
+end
